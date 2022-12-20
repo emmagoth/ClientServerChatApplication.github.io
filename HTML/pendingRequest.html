@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Request</title>
+    <script src="../JavaScript/checkLogin.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCezzXXeWlzvPPt5W_M9nX95w_fQVQms88",
+            authDomain: "client-server-applicatio-a899f.firebaseapp.com",
+            databaseURL: "https://client-server-applicatio-a899f-default-rtdb.firebaseio.com",
+            projectId: "client-server-applicatio-a899f",
+            storageBucket: "client-server-applicatio-a899f.appspot.com",
+            messagingSenderId: "813097380985",
+            appId: "1:813097380985:web:b2f9f08b3c3444e428b8a8"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        var mobileNumber = sessionStorage.getItem('User');
+
+        var today = new Date();
+        var date = today.getFullYear() + '' + (today.getMonth() + 1) + '' + today.getDate();
+        var time = today.getHours() + '' + today.getMinutes() + '' + today.getSeconds();
+        var dateTime = date + time;
+
+        function acceptRequest(clickedID) {
+            var friendListDatabaseRef = db.ref("UserInformation/" + mobileNumber + "/FriendList/" + clickedID);
+            var senderfriendListDatabaseRef = db.ref("UserInformation/" + clickedID + "/FriendList/" + mobileNumber);
+            var pendingFriendRequestDatabaseRef = db.ref("UserInformation/" + mobileNumber);
+
+            friendListDatabaseRef.set({
+                MobileNumber: clickedID
+            }).then(() => {
+            }).catch((error) => {
+                alert("catch" + error);
+            });
+
+            senderfriendListDatabaseRef.set({
+                MobileNumber: mobileNumber,
+                FullName: sessionStorage.getItem('Name')
+            }).then(() => {
+            }).catch((error) => {
+                alert("catch" + error);
+            });
+
+            db.ref().child("UserInformation").child(mobileNumber).get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    var pendingFriendRequest = snapshot.val().PendingFriendRequest;
+
+                    db.ref("UserInformation/" + mobileNumber).update({ PendingFriendRequest: pendingFriendRequest - 1 });
+                }
+                else {
+                    alert('User Does not Exists');
+                }
+            }).catch((error) => {
+                alert('error' + error);
+            });
+
+            db.ref().child("UserInformation").child(mobileNumber).child("PendingFriendRequestList").child(clickedID).get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    snapshot.ref.remove()
+                        .then(() => {
+
+                        }).catch((error) => {
+                            alert("catch" + error);
+                        });
+                } else {
+                    alert('error');
+                }
+            }).catch((error) => {
+                alert('error' + error);
+            });
+
+            var notificationID = mobileNumber + dateTime;
+            var notificationDatabaseRef = db.ref("UserInformation/" + clickedID + "/Notification/" + notificationID);
+
+            notificationDatabaseRef.set({
+                NotificationMessage: "Your Request has been Accepted by " + sessionStorage.getItem('Name')
+            }).then(() => {
+                alert("Request Accepted");
+            }).catch((error) => {
+                alert("catch" + error);
+            });
+
+            db.ref().child("UserInformation").child(mobileNumber).get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    var totalFriendCount = snapshot.val().TotalFriend;
+
+                    db.ref("UserInformation/" + mobileNumber).update({ TotalFriend: totalFriendCount + 1 });
+                }
+            }).catch((error) => {
+                alert('error' + error);
+            });
+
+            db.ref().child("UserInformation").child(clickedID).get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    var totalFriendCount = snapshot.val().TotalFriend;
+
+                    db.ref("UserInformation/" + clickedID).update({ TotalFriend: totalFriendCount + 1 });
+                }
+            }).catch((error) => {
+                alert('error' + error);
+            });
+        }
+
+        function rejectRequest(clickedID) {
+            db.ref().child("UserInformation").child(mobileNumber).get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    var pendingFriendRequest = snapshot.val().PendingFriendRequest;
+
+                    db.ref("UserInformation/" + mobileNumber).update({ PendingFriendRequest: pendingFriendRequest - 1 });
+                }
+                else {
+                    alert('User Does not Exists');
+                }
+            }).catch((error) => {
+                alert('error' + error);
+            });
+
+            db.ref().child("UserInformation").child(mobileNumber).child("PendingFriendRequestList").child(clickedID).get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    snapshot.ref.remove()
+                        .then(() => {
+
+                        }).catch((error) => {
+                            alert("catch" + error);
+                        });
+                } else {
+                    alert('error');
+                }
+            }).catch((error) => {
+                alert('error' + error);
+            });
+
+            var notificationID = mobileNumber + dateTime;
+            var notificationDatabaseRef = db.ref("UserInformation/" + clickedID + "/Notification/" + notificationID);
+
+            notificationDatabaseRef.set({
+                NotificationMessage: "Your Request has been Rejected/Denied by " + sessionStorage.getItem('Name')
+            }).then(() => {
+                alert("Request Rejected");
+            }).catch((error) => {
+                alert("catch" + error);
+            });
+        }
+
+    </script>
+</head>
+
+<body>
+    <ul id="displayPendingRequestList">
+    </ul>
+</body>
+<script src="../JavaScript/pendingRequest.js" type="module"></script>
+
+</html>
